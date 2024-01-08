@@ -8,7 +8,7 @@ dotenv.config({ path: "./env" })//Loads env variables from .env file. Since env 
 connectDb()
     .then(() => {
         app.listen(process.env.PORT || 8000, () => {
-            `Server listening on ${process.env.PORT || 8000}`;
+            console.log(`Server listening on ${process.env.PORT || 8000}`);
         })
     })
     .catch((err) => {
