@@ -10,10 +10,12 @@ const fileUpload = async (localFilePath) => {
       resource_type: "auto" // Figure out type of file on your own.
     })
 
-    console.log("File upload successful " + response);
+    console.log("Cloudinary: uploaded syccessfully");
+
+    fs.unlinkSync(localFilePath);
     return response;
   } catch (err) {
-    fs.unlink(localFilePath) // Delete the file from local server if upload fails. Cleanup action to prevent buildup of unnecessary files.
+    fs.unlinkSync(localFilePath) // Delete the file from local server if upload fails. Cleanup action to prevent buildup of unnecessary files.
     console.log(err);
   }
 }

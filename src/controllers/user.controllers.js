@@ -18,10 +18,10 @@ const validateUser = (req, res, next) => {
 
     try {
         const validatedData = validationSchema.parse({ username, fullName, email, password });
-        console.log('Validation passed:', validatedData);
+       // console.log('Validation passed:', validatedData);
     } catch (error) {
-        const errorMessages = error.errors.map((err) => err.message);
-        console.error('Validation failed:', errorMessages);
+       // const errorMessages = error.errors.map((err) => err.message);
+        //console.error('Validation failed:', errorMessages);
         throw new APIError(400, error.errors[0].message, error)
     }
 
@@ -29,7 +29,7 @@ const validateUser = (req, res, next) => {
 }
 
 // A function that registers the use. Since db operation requires time we use async await.
-const registerUser = async (req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
 
 
     const { username, fullName, email, password } = req.body;
@@ -45,15 +45,24 @@ const registerUser = async (req, res) => {
     }
 
     // We an access the files uploaded via req.files provided by multer.
-    console.log(req.files);
 
-    const avatarFilePath = req.files?.avatar[0]?.path // Optional chaining: checks if req.files exists if no then return undefined and if yes then checks the avatar and then finally path.
+    // const avatarFilePath = req.files?.avatar[0].path // Optional chaining: checks if req.files exists if no then return undefined and if yes then checks the avatar and then finally path.
+    let avatarFilePath;
 
-    const coverFilePath = req.files?.coverImage[0]?.path;
+    if (req.files.avatar && req.files.avatar.length > 0) {
+        avatarFilePath = req.files.avatar[0].path;
+    }
+
+    let coverFilePath;
+    if (req.files.coverImage && req.files.coverImage.length > 0) {
+        coverFilePath = req.files?.coverImage[0]?.path;
+    }
+
+
 
 
     if (!avatarFilePath) {
-        throw new APIError('Avatar Image is required')
+        throw new APIError(400, 'Avatar Image is required')
     }
 
     const avatar = await fileUpload(avatarFilePath);
@@ -61,7 +70,7 @@ const registerUser = async (req, res) => {
 
 
     if (!avatar) {
-        throw new APIError('Avatar Image upload failed');
+        throw new APIError(400, 'Avatar Image upload failed');
     }
 
     let newUser = await Users.create({ username, fullName, email, password, avatar: avatar.url, coverImage: coverImage?.url });
@@ -70,11 +79,11 @@ const registerUser = async (req, res) => {
     let createdUser = await Users.findById(newUser._id).select("-password -refreshToken") //Select method is used to incluse or exclude (-) feilds from query result. Similar to select from SQL. 
 
     if (!createdUser) {
-        throw new APIError("Registration failed");
+        throw new APIError(500, "Registration failed");
     }
 
 
     return res.status(201).json(new ApiResponse(200, createdUser, "User details uploaded successfuly"))
-}
+})
 
 export { registerUser, validateUser };

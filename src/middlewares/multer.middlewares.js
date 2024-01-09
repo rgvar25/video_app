@@ -8,7 +8,7 @@ const configureStorage = multer.diskStorage({ //set the path to store on disk. C
         cb(null, "./public/temp") //null is for error feild. determines function to be executed when error
     },
     filename: (req, file, cb) => {
-        console.log("multer file : " + file[0]);
+
         cb(null, file.originalname)
     }
 
