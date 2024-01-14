@@ -5,6 +5,28 @@ import { Users } from "../models/user.models.js"
 import { fileUpload } from "../utils/fileUpload.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+
+//Internal method. Defined it seperately coz it might be used multiple times.
+const generatRefreshAndAccessTokens = async (user) => {
+
+    try {
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+
+        //Mongoose validates before saving. Hence it would throw an error if it's constraints aren't met like password empty. Hence validateBeforeSaving is false.
+        await user.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken }
+
+    } catch (error) {
+        throw new APIError(500, "Cannot generate access and refresh tokens.")
+    }
+
+}
+
+
 //Validation using zod library.
 const validateUser = (req, res, next) => {
     const validationSchema = z.object({
@@ -18,9 +40,9 @@ const validateUser = (req, res, next) => {
 
     try {
         const validatedData = validationSchema.parse({ username, fullName, email, password });
-       // console.log('Validation passed:', validatedData);
+        // console.log('Validation passed:', validatedData);
     } catch (error) {
-       // const errorMessages = error.errors.map((err) => err.message);
+        // const errorMessages = error.errors.map((err) => err.message);
         //console.error('Validation failed:', errorMessages);
         throw new APIError(400, error.errors[0].message, error)
     }
@@ -86,4 +108,54 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(200, createdUser, "User details uploaded successfuly"))
 })
 
-export { registerUser, validateUser };
+
+
+//Defining login function.
+const loginUser = asyncHandler(async (req, res) => {
+
+    //Allow user to sign in either by username or password.
+    const { uname, password } = req.body;
+
+    if (!uname || !password) {
+        throw new APIError(400, 'Username and password is required');
+    }
+
+    //Find user either through username or password
+    const user = await Users.findOne({
+        $or: [{ username: uname }, { email: email }]
+    })
+
+    if (!user) {
+        throw new APIError(404, "User not found");
+    }
+
+    //We defined this method explicitly in user.models 
+    if (!(await user.isPasswordCorrect(password))) {
+        throw new APIError(401, "Password incorrect");
+    }
+
+    const { accessToken, refreshToken } = await generatRefreshAndAccessTokens(user);
+
+    //to send user to frontend 
+    user = user.select(["-password -refreshToken"])
+
+    //Setting this options signifies that cookies can only be modified in backend and not via user.
+    let options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    //Cookies work in key value pair
+    return res.cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).json(
+        new ApiResponse(
+            200,
+            {
+                user, refreshToken, accessToken //We send a json response so that if needed we can store it in local storage in frontend.
+            },
+            "user logged in successfully"
+        )
+    )
+})
+
+
+export { registerUser, validateUser, loginUser };
