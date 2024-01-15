@@ -1,6 +1,6 @@
 import mongoose, { mongo } from "mongoose";
 import bcrypt from "bcrypt"; // used to hash passwords with bcrypt algo. bcrypt uses native c++ module for algo implementation. Node can compile native modules. However in plain js files use bcryptjs.
-import jwt from "json-web-token"; //Provides a Bearer token for authentication. Whoever has the token is authenticated.
+import jwt from "jsonwebtoken"; //Provides a Bearer token for authentication. Whoever has the token is authenticated.
 
 
 const userSchema = new mongoose.Schema({
@@ -66,9 +66,9 @@ userSchema.methods.generateAccessToken = async function () {
         username: this.username,
         fullName: this.fullName
     },
-        process.env.ACESS_TOKEN_SECRET,
+        process.env.ACCESS_TOKEN_SECRET,
         {
-            expiry: process.env.ACESS_TOKEN_EXPIRY
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
         }
     )
 }
@@ -80,7 +80,7 @@ userSchema.methods.generateRefreshToken = async function () {
     },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            expiry: process.env.REFRESH_TOKEN_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
     )
 }

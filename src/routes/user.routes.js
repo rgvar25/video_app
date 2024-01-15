@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser, validateUser } from "../controllers/user.controllers.js";
+import { loginUser, registerUser, validateUser } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js"
 
 // This approach is followed for better segregation of code and to  make code more modular.
@@ -14,8 +14,10 @@ router.post("/register", upload.fields([ //multer middleware to process files. F
         name: 'coverImage',
         maxCount: 1
     }
-]),validateUser, registerUser);
+]), validateUser, registerUser);
 
+
+router.post("/login", loginUser);
 
 
 //router.route("/register").post(registerUser)

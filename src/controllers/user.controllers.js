@@ -10,13 +10,13 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const generatRefreshAndAccessTokens = async (user) => {
 
     try {
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
 
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
         user.refreshToken = refreshToken;
-
         //Mongoose validates before saving. Hence it would throw an error if it's constraints aren't met like password empty. Hence validateBeforeSaving is false.
         await user.save({ validateBeforeSave: false });
+
 
         return { accessToken, refreshToken }
 
@@ -40,7 +40,7 @@ const validateUser = (req, res, next) => {
 
     try {
         const validatedData = validationSchema.parse({ username, fullName, email, password });
-        // console.log('Validation passed:', validatedData);
+        //console.log('Validation passed:', validatedData);
     } catch (error) {
         // const errorMessages = error.errors.map((err) => err.message);
         //console.error('Validation failed:', errorMessages);
@@ -113,16 +113,17 @@ const registerUser = asyncHandler(async (req, res) => {
 //Defining login function.
 const loginUser = asyncHandler(async (req, res) => {
 
-    //Allow user to sign in either by username or password.
-    const { uname, password } = req.body;
 
-    if (!uname || !password) {
+    //Allow user to sign in either by username or password.
+    const { username, password } = req.body;
+
+    if (!username || !password) {
         throw new APIError(400, 'Username and password is required');
     }
 
     //Find user either through username or password
     const user = await Users.findOne({
-        $or: [{ username: uname }, { email: email }]
+        $or: [{ username: username }, { email: username }]
     })
 
     if (!user) {
@@ -136,14 +137,16 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generatRefreshAndAccessTokens(user);
 
+    console.log(user);
     //to send user to frontend 
-    user = user.select(["-password -refreshToken"])
+    //user = user.select(["-password -refreshToken"])
 
     //Setting this options signifies that cookies can only be modified in backend and not via user.
     let options = {
         httpOnly: true,
         secure: true
     }
+
 
     //Cookies work in key value pair
     return res.cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).json(
