@@ -108,14 +108,14 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(200, createdUser, "User details uploaded successfuly"))
 })
 
-
-
 //Defining login function.
 const loginUser = asyncHandler(async (req, res) => {
 
-
     //Allow user to sign in either by username or password.
     const { username, password } = req.body;
+
+    console.log(req.cookies.accessToken)
+
 
     if (!username || !password) {
         throw new APIError(400, 'Username and password is required');
@@ -137,7 +137,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generatRefreshAndAccessTokens(user);
 
-    console.log(user);
     //to send user to frontend 
     //user = user.select(["-password -refreshToken"])
 
@@ -160,5 +159,23 @@ const loginUser = asyncHandler(async (req, res) => {
     )
 })
 
+const logoutUser = asyncHandler(async (req, res) => {
+    // You can't use this as you dont have access of refresh token in req.user([ -password, -refreshToken]) 
+    // req.user?.refreshToken = "";
 
-export { registerUser, validateUser, loginUser };
+    await Users.findByIdAndUpdate(req.user._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        })
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200,{}, "User logged out successfully"));
+})
+
+export { registerUser, validateUser, loginUser, logoutUser };

@@ -8,7 +8,8 @@ const app = express();
 
 
 app.use(cors({
-    origin: process.env.CORS
+    origin: process.env.CORS, // Replace with your frontend's origin
+    credentials: true,
 })); // allows request only from specific origin(domain). Usually the url of frontend is passed that is goanna request the backend
 
 app.use(express.json({ limit: "16kb" })) // Recognises and parses JSON data in the payload and makes it accessible in req.body . Can also limit the size of incoming JSON data
@@ -28,7 +29,7 @@ app.use('/api/v1/users', userRouter)
 
 
 app.use((err, req, res, next) => {
-    
+
     res.status(err.statusCode).send(err);
 });
 export { app };

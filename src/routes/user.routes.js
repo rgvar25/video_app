@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { loginUser, registerUser, validateUser } from "../controllers/user.controllers.js";
+import { loginUser, logoutUser, registerUser, validateUser } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js"
+import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
 // This approach is followed for better segregation of code and to  make code more modular.
 const router = Router();
@@ -16,12 +17,10 @@ router.post("/register", upload.fields([ //multer middleware to process files. F
     }
 ]), validateUser, registerUser);
 
-
 router.post("/login", loginUser);
 
-
-//router.route("/register").post(registerUser)
-
+//Secured Routes
+router.route('/logout', verifyJWT, logoutUser)
 
 
 export default router;
