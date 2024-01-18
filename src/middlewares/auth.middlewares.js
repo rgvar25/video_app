@@ -5,6 +5,8 @@ import { Users } from "../models/user.models.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
 
+    console.log(req.cookies);
+
     //Cookie Parser gives you access to cookies in req object. For this you need to send axios request with credentials true from frontend. And edit cors to allow only frontend url. Wont end with CORS = *. 
     try {
         const token = req.cookies?.accessToken;

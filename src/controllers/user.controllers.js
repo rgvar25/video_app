@@ -108,6 +108,9 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(200, createdUser, "User details uploaded successfuly"))
 })
 
+
+
+
 //Defining login function.
 const loginUser = asyncHandler(async (req, res) => {
 
