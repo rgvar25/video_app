@@ -4,7 +4,7 @@ import { APIError } from "../utils/ApiError.js"
 import { Users } from "../models/user.models.js"
 import { fileUpload } from "../utils/fileUpload.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import jwt from "jsonwebtoken";
 
 //Internal method. Defined it seperately coz it might be used multiple times.
 const generatRefreshAndAccessTokens = async (user) => {
@@ -162,6 +162,7 @@ const loginUser = asyncHandler(async (req, res) => {
     )
 })
 
+//Logout functionality
 const logoutUser = asyncHandler(async (req, res) => {
     // You can't use this as you dont have access of refresh token in req.user([ -password, -refreshToken]) 
     // req.user?.refreshToken = "";
@@ -178,7 +179,53 @@ const logoutUser = asyncHandler(async (req, res) => {
         secure: true
     }
 
-    res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200,{}, "User logged out successfully"));
+    res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200, {}, "User logged out successfully"));
+})
+
+
+//Generatte new access and refresh tokens based on refresh token sent by user.
+const refreshToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new APIError(401, "Unauthorised access: No refresh Token");
+    }
+
+    try {
+        const decodedJwt = jwt.verify(incomingRefreshToken, process.env, REFRESH_TOKEN_SECRET);
+
+        const user = await Users.findById(decodedJwt?._id);
+
+        if (!user) {
+            throw new APIError(401, 'Unauthorised access: No user found');
+        }
+
+        if (incomingRefreshToken !== user.refreshToken) {
+            throw new APIError(401, "Unauthorized access: Expired or  old refresh Token");
+        }
+
+        const { accessToken, refreshToken } = await generatRefreshAndAccessTokens(user);
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res.cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).json(
+            new ApiResponse(
+                200,
+                {
+                    user, refreshToken, accessToken //We send a json response so that if needed we can store it in local storage in frontend.
+                },
+                "New tokens generated"
+            )
+        )
+
+    } catch (error) {
+
+    }
+
+
 })
 
 export { registerUser, validateUser, loginUser, logoutUser };
